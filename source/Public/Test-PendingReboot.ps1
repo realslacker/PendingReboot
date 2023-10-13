@@ -148,7 +148,7 @@ function Test-PendingReboot
                     CimSession = $CimSession
                     Namespace  = 'root\CIMv2'
                     ClassName  = 'StdRegProv'
-                    Name       = 'EnumKey'
+                    MethodName = 'EnumKey'
                     Arguments  = @{
                         hDefKey     = [UInt32] "0x80000002" # HKLM
                         sSubKeyName = $null
@@ -169,7 +169,7 @@ function Test-PendingReboot
                 $PendingDomainJoin = ($RegistryNetlogon -contains 'JoinDomain') -or ($RegistryNetlogon -contains 'AvoidSpnSet')
 
                 ## Query ComputerName and ActiveComputerName from the registry and setting the MethodName to GetMultiStringValue
-                $InvokeCimMethodSplat.Name = 'GetStringValue'
+                $InvokeCimMethodSplat.MethodName = 'GetStringValue'
 
                 $InvokeCimMethodSplat.Arguments.sSubKeyName = 'SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName'
                 $InvokeCimMethodSplat.Arguments.sValueName = 'ComputerName'
@@ -189,7 +189,7 @@ function Test-PendingReboot
                     $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
                     if ($null -eq $RegistryPendingFileRenameOperations)
                     {
-                        $InvokeCimMethodSplat.Name = 'GetMultiStringValue'
+                        $InvokeCimMethodSplat.MethodName = 'GetMultiStringValue'
                         $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
 
                     }
@@ -204,7 +204,7 @@ function Test-PendingReboot
                         CimSession  = $CimSession
                         Namespace   = 'root\ccm\ClientSDK'
                         ClassName   = 'CCM_ClientUtilities'
-                        Name        = 'DetermineifRebootPending'
+                        MethodName  = 'DetermineifRebootPending'
                     }
 
                     $SCCMClientSDKError = $null
