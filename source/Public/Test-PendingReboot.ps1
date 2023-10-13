@@ -187,6 +187,12 @@ function Test-PendingReboot
                     $InvokeCimMethodSplat.Arguments.sSubKeyName = 'SYSTEM\CurrentControlSet\Control\Session Manager'
                     $InvokeCimMethodSplat.Arguments.sValueName = 'PendingFileRenameOperations'
                     $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
+                    if ($null -eq $RegistryPendingFileRenameOperations)
+                    {
+                        $InvokeCimMethodSplat.Name = 'GetMultiStringValue'
+                        $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
+
+                    }
                     $RegistryPendingFileRenameOperationsBool = [bool]$RegistryPendingFileRenameOperations
 
                 }
