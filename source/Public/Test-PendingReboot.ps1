@@ -139,17 +139,18 @@ function Test-PendingReboot
             {
                 ## Establish a CimSession
                 $CredentialSplat = @{}
-                if ($PSBoundParameters.ContainsKey('Credential')) {
+                if ($PSBoundParameters.ContainsKey('Credential'))
+                {
                     $CredentialSplat.Credential = $Credential
                 }
                 $CimSession = New-CimSession -ComputerName $ComputerNameItem @CredentialSplat -ErrorAction Stop
 
                 $InvokeCimMethodSplat = @{
-                    CimSession = $CimSession
-                    Namespace  = 'root\CIMv2'
-                    ClassName  = 'StdRegProv'
-                    MethodName = 'EnumKey'
-                    Arguments  = @{
+                    CimSession  = $CimSession
+                    Namespace   = 'root\CIMv2'
+                    ClassName   = 'StdRegProv'
+                    MethodName  = 'EnumKey'
+                    Arguments   = @{
                         hDefKey     = [UInt32] "0x80000002" # HKLM
                         sSubKeyName = $null
                     }
@@ -187,14 +188,19 @@ function Test-PendingReboot
                     $InvokeCimMethodSplat.Arguments.sSubKeyName = 'SYSTEM\CurrentControlSet\Control\Session Manager'
                     $InvokeCimMethodSplat.Arguments.sValueName = 'PendingFileRenameOperations'
                     $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
+
                     if ($null -eq $RegistryPendingFileRenameOperations)
                     {
                         $InvokeCimMethodSplat.MethodName = 'GetMultiStringValue'
                         $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
-
                     }
-                    $RegistryPendingFileRenameOperationsBool = [bool]$RegistryPendingFileRenameOperations
 
+                    if ($null -ne $RegistryPendingFileRenameOperations)
+                    {
+                        $RegistryPendingFileRenameOperations = ($RegistryPendingFileRenameOperations | Where-Object {$_ -match '\S'}).TrimStart("\?")
+                    }
+
+                    $RegistryPendingFileRenameOperationsBool = [bool]$RegistryPendingFileRenameOperations
                 }
 
                 ## Query ClientSDK for pending reboot status, unless SkipConfigurationManagerClientCheck is present
@@ -220,27 +226,26 @@ function Test-PendingReboot
                     {
                         $SystemCenterConfigManager = $SCCMClientSDK.ReturnValue -eq 0 -and ($SCCMClientSDK.IsHardRebootPending -or $SCCMClientSDK.RebootPending)
                     }
-
                 }
 
-                $IsRebootPending = $RegistryComponentBasedServicing -or `
-                    $PendingComputerRename -or `
-                    $PendingDomainJoin -or `
-                    $RegistryPendingFileRenameOperations -or `
-                    $SystemCenterConfigManager -or `
+                $IsRebootPending = $RegistryComponentBasedServicing -or
+                    $PendingComputerRename -or
+                    $PendingDomainJoin -or
+                    $RegistryPendingFileRenameOperations -or
+                    $SystemCenterConfigManager -or
                     $RegistryWindowsUpdateAutoUpdate
 
                 if ($PSBoundParameters.ContainsKey('Detailed'))
                 {
                     [PSCustomObject]@{
-                        ComputerName                     = $ComputerNameItem
-                        ComponentBasedServicing          = $RegistryComponentBasedServicing
-                        PendingComputerRenameDomainJoin  = $PendingComputerRename
-                        PendingFileRenameOperations      = $registryPendingFileRenameOperationsBool
-                        PendingFileRenameOperationsValue = $registryPendingFileRenameOperations
-                        SystemCenterConfigManager        = $SystemCenterConfigManager
-                        WindowsUpdateAutoUpdate          = $RegistryWindowsUpdateAutoUpdate
-                        IsRebootPending                  = $IsRebootPending
+                        ComputerName                        = $ComputerNameItem
+                        ComponentBasedServicing             = $RegistryComponentBasedServicing
+                        PendingComputerRenameDomainJoin     = $PendingComputerRename
+                        PendingFileRenameOperations         = $registryPendingFileRenameOperationsBool
+                        PendingFileRenameOperationsValue    = $registryPendingFileRenameOperations
+                        SystemCenterConfigManager           = $SystemCenterConfigManager
+                        WindowsUpdateAutoUpdate             = $RegistryWindowsUpdateAutoUpdate
+                        IsRebootPending                     = $IsRebootPending
                     }
                 }
                 else
@@ -253,7 +258,8 @@ function Test-PendingReboot
             }
             finally
             {
-                if ( $null -ne $CimSession ) {
+                if ($null -ne $CimSession)
+                {
                     Remove-CimSession -CimSession $CimSession
                 }
             }
