@@ -169,7 +169,7 @@ function Test-PendingReboot
                 $RegistryNetlogon = (Invoke-CimMethod @InvokeCimMethodSplat).sNames
                 $PendingDomainJoin = ($RegistryNetlogon -contains 'JoinDomain') -or ($RegistryNetlogon -contains 'AvoidSpnSet')
 
-                ## Query ComputerName and ActiveComputerName from the registry and setting the MethodName to GetMultiStringValue
+                ## Query ComputerName and ActiveComputerName from the registry and setting the MethodName to GetStringValue
                 $InvokeCimMethodSplat.MethodName = 'GetStringValue'
 
                 $InvokeCimMethodSplat.Arguments.sSubKeyName = 'SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName'
@@ -182,19 +182,21 @@ function Test-PendingReboot
 
                 $PendingComputerRename = $RegistryActiveComputerName -ne $RegistryComputerName -or $PendingDomainJoin
 
-                ## Query PendingFileRenameOperations from the registry
+                ## Query PendingFileRenameOperations from the registry and trying with MethodName GetStringValue
                 if (-not $PSBoundParameters.ContainsKey('SkipPendingFileRenameOperationsCheck'))
                 {
                     $InvokeCimMethodSplat.Arguments.sSubKeyName = 'SYSTEM\CurrentControlSet\Control\Session Manager'
                     $InvokeCimMethodSplat.Arguments.sValueName = 'PendingFileRenameOperations'
                     $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
 
+                    ### If the query returns $null then retry with MethodName GetMultiStringValue
                     if ($null -eq $RegistryPendingFileRenameOperations)
                     {
                         $InvokeCimMethodSplat.MethodName = 'GetMultiStringValue'
                         $RegistryPendingFileRenameOperations = (Invoke-CimMethod @InvokeCimMethodSplat).sValue
                     }
 
+                    ### If the query returned something then remove empty lines from the list and remove leading characters from the path strings
                     if ($null -ne $RegistryPendingFileRenameOperations)
                     {
                         $RegistryPendingFileRenameOperations = ($RegistryPendingFileRenameOperations | Where-Object {$_ -match '\S'}).TrimStart("\?")
